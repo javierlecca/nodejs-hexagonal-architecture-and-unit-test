@@ -1,0 +1,12 @@
+port: 8080
+versionApi: v1
+db:
+    mongodb:
+        -   enabled: true
+            host: localhost
+            port: 27017
+            username: test
+            password: 123456
+            database: demo
+            nameconn: connMongo
+            lang: ES
