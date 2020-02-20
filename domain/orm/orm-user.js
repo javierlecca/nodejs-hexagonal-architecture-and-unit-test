@@ -22,13 +22,14 @@ exports.GetById = async ( Id ) =>{
 
 exports.Store = async ( Name, LastName, Age ) =>{
     try{
-        datacenter = new conn.db.connMongo.User({
+        const datacenter = await new conn.db.connMongo.User({
             userId: uuid(),
             name: Name,
             lastName: LastName,
             age: Age,
             IsDelete: false
         });
+        datacenter.save();
         return true
     }catch(err){
         console.log(" err orm-user.Store = ", err);
@@ -46,7 +47,7 @@ exports.DeleteById = async ( Id ) =>{
     }
 }
 
-exports.UpdateById = async ( Id, Name, LastName, Age ) =>{
+exports.UpdateById = async ( Name, LastName, Age, Id ) =>{
     try{
         await conn.db.connMongo.User.findOneAndUpdate(
             {

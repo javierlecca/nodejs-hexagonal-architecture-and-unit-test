@@ -16,7 +16,7 @@ server.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
 // parse application/json 
 server.use(bodyParser.json({limit: '50mb'}));
 
-require('../router')(server);
+require('../routes')(server);
 
 module.exports = server;
 

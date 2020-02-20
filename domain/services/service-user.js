@@ -1,59 +1,56 @@
 const magic = require('../../util/magic');
 const enum_ = require('../../util/enum');
 const ormUser = require('../orm/orm-user');
+const { isUuid } = require('uuidv4');
 
 
 exports.GetAll = async (req, res) =>{
+    let status = 'Success', errorCode ='', message='', data='', statusCode=0, resp={};
     try{
-        data = await ormUser.GetAll();
-        if(data.err){
-            const response = await util.ResponseService('Failure',data.err.code,data.err.messsage,'');
-            console.log(`/datacenters  :: [GET] ::  :: ${enum_.CODE_BAD_REQUEST}  :: ${response}` );
-            return res.status(enum_.CODE_BAD_REQUEST).send(response);
+        respOrm = await ormUser.GetAll();
+        if(respOrm.err){
+            status = 'Failure', errorCode = respOrm.err.code, message = respOrm.err.messsage, statusCode = enum_.CODE_BAD_REQUEST;
         }else{
-            const code = data.length > 0 ? enum_.CODE_OK : enum_.CODE_NO_CONTENT;
-            const response = await util.ResponseService('Success','','Success Response',data);
-            console.log(`/datacenters  :: [GET] ::  :: ${code}  :: ${response}` );
-            return res.status(code).send(response);
+            message = 'Success Response', data = respOrm, statusCode = data.length > 0 ? enum_.CODE_OK : enum_.CODE_NO_CONTENT;
         }
+        resp = await magic.ResponseService(status,errorCode,message,data);
+        return res.status(statusCode).send(resp);
     } catch(err) {
         console.log("err = ", err);
-        const response = await util.ResponseService('Failure',enum_.CRASH_LOGIC,err,'');
-        console.log(`/datacenters  :: [GET] ::  :: ${enum_.CODE_INTERNAL_SERVER_ERROR}  :: ${response}` );
-        return res.status(enum_.CODE_INTERNAL_SERVER_ERROR).send(response);
+        resp = await magic.ResponseService('Failure',enum_.CRASH_LOGIC,err,'');
+        return res.status(enum_.CODE_INTERNAL_SERVER_ERROR).send(resp);
     }
 }
 
 exports.GetById = async (req, res) =>{
-    console.log(enum_.CYAN_LOG, '[GET] = /datacenters/:id method = [GETBYID]');
+    let status = 'Success', errorCode ='', message='', data='', statusCode=0, resp={};
     try{
         const id = req.params.id;
         if(isUuid(id)){
-            data = await ormUser.GetById(id);
-            if(data.err){
-                return res.status(enum_.CODE_BAD_REQUEST).send(await util.ResponseService('Failure',data.err.code,data.err.messsage,''));
+            respOrm = await ormUser.GetById(id);
+            if(respOrm && respOrm.err){
+                status = 'Failure', errorCode = respOrm.err.code, message = respOrm.err.messsage, statusCode = enum_.CODE_BAD_REQUEST;
             }else{
-                if (data) {
-                    return res.status(enum_.CODE_OK).send(await util.ResponseService('Success','','Success Response',data));
+                if (respOrm) {
+                    message = 'Success Response', data= respOrm, statusCode = enum_.CODE_OK;
                 }else{
-                    return res.status(enum_.CODE_NOT_FOUND).send(await util.ResponseService('Failure',enum_.ID_NOT_FOUND,'ID NOT FOUND',''));
+                    status = 'Failure', errorCode = enum_.ID_NOT_FOUND, message = 'ID NOT FOUND', statusCode = enum_.CODE_NOT_FOUND;
                 }
             }
         }else{
-            return res.status(enum_.CODE_BAD_REQUEST).send(await util.ResponseService('Failure',enum_.FAIL_CONVERTED_UUID_TO_STRING,'Error trying convert uuid to string',''));
+            status = 'Failure', errorCode = enum_.FAIL_CONVERTED_UUID_TO_STRING, message = 'Error trying convert uuid to string', statusCode = enum_.CODE_BAD_REQUEST;
         }
+        resp = await magic.ResponseService(status,errorCode,message,data);
+        return res.status(statusCode).send(resp);
     } catch(err) {
         console.log("err = ", err);
-        return res.status(enum_.CODE_INTERNAL_SERVER_ERROR).send(await util.ResponseService('Failure',enum_.CRASH_LOGIC,err,''));
+        return res.status(enum_.CODE_INTERNAL_SERVER_ERROR).send(await magic.ResponseService('Failure',enum_.CRASH_LOGIC,err,''));
     }
 }
 
 
 exports.Store = async (req, res) =>{
-    console.log(enum_.GREEN_LOG, '[POST] = /datacenters/ method = [STORE]');
-
     let status = 'Success', errorCode ='', message='', data='', statusCode=0, resp={};
-
     try{
         const Name = req.body.Name;
         const LastName = req.body.LastName;
@@ -61,16 +58,14 @@ exports.Store = async (req, res) =>{
         if( Name && LastName && Age ){
             respOrm = await ormUser.Store( Name, LastName, Age );
             if(respOrm.err){
-                status = 'Failure', errorCode = data.err.code, message = data.err.messsage, statusCode = enum_.CODE_BAD_REQUEST;
-                resp = await magic.ResponseService(status,errorCode,message,data)
+                status = 'Failure', errorCode = respOrm.err.code, message = respOrm.err.messsage, statusCode = enum_.CODE_BAD_REQUEST;
             }else{
                 message = 'User created', statusCode = enum_.CODE_CREATED;
-                resp = await magic.ResponseService(status,errorCode,message,data)
             }
         }else{
             status = 'Failure', errorCode = enum_.ERROR_REQUIRED_FIELD, message = 'All fields are required', statusCode = enum_.CODE_BAD_REQUEST;
-            resp = await magic.ResponseService(status,errorCode,message,data)
         }
+        resp = await magic.ResponseService(status,errorCode,message,data)
         return res.status(statusCode).send(resp);
     } catch(err) {
         console.log("err = ", err);
@@ -78,44 +73,52 @@ exports.Store = async (req, res) =>{
     }
 }
 
-exports.DeleteById = async (req, res) =>{
-    console.log(enum_.RED_LOG, '[DELETE] = /datacenters/:id method = [DELETEBYID]');
+exports.UpdateById = async (req, res) =>{
+    let status = 'Success', errorCode ='', message='', data='', statusCode=0, resp={};
     try{
         const id = req.params.id;
         if(isUuid(id)){
             const Name = req.body.Name;
-            const Type = req.body.Type;
-            const Location = req.body.Location;
-            data = await ormUser.UpdateById(id);
-            if(data.err){
-                return res.status(enum_.CODE_BAD_REQUEST).send(await util.ResponseService('Failure',data.err.code,data.err.messsage,''));
+            const LastName = req.body.LastName;
+            const Age = req.body.Age;
+            if( Name && LastName && Age ){
+                respOrm = await ormUser.UpdateById( Name, LastName, Age, id );
+                if(respOrm.err){
+                    status = 'Failure', errorCode = respOrm.err.code, message = respOrm.err.messsage, statusCode = enum_.CODE_BAD_REQUEST;
+                }else{
+                    message = 'User updated', statusCode = enum_.CODE_CREATED;
+                }
             }else{
-                return res.status(enum_.CODE_OK).send(await util.ResponseService('Success','','Datacenter deleted',''));
+                status = 'Failure', errorCode = enum_.ERROR_REQUIRED_FIELD, message = 'All fields are required', statusCode = enum_.CODE_BAD_REQUEST;
             }
         }else{
-            return res.status(enum_.CODE_BAD_REQUEST).send(await util.ResponseService('Failure',enum_.FAIL_CONVERTED_UUID_TO_STRING,'Error trying convert uuid to string',''));
+            status = 'Failure', errorCode = enum_.FAIL_CONVERTED_UUID_TO_STRING, message = 'Error trying convert uuid to string', statusCode = enum_.CODE_BAD_REQUEST;
         }
+        resp = await magic.ResponseService(status,errorCode,message,data)
+        return res.status(statusCode).send(resp);
     } catch(err) {
         console.log("err = ", err);
-        return res.status(enum_.CODE_INTERNAL_SERVER_ERROR).send(await util.ResponseService('Failure',enum_.CRASH_LOGIC,err,''));
+        return res.status(enum_.CODE_INTERNAL_SERVER_ERROR).send(await magic.ResponseService('Failure',enum_.CRASH_LOGIC,err,''));
     }
 }
-exports.UpdateById = async (req, res) =>{
-    console.log(enum_.YELLOW_LOG, '[PATCH] = /datacenters/:id method = [UPDATEBYID]');
+exports.DeleteById = async (req, res) =>{
+    let status = 'Success', errorCode ='', message='', data='', statusCode=0, resp={};
     try{
         const id = req.params.id;
         if(isUuid(id)){
-            data = await ormUser.DeleteById(id);
-            if(data.err){
-                return res.status(enum_.CODE_BAD_REQUEST).send(await util.ResponseService('Failure',data.err.code,data.err.messsage,''));
+            respOrm = await ormUser.DeleteById(id);
+            if(respOrm.err){
+                status = 'Failure', errorCode = respOrm.err.code, message = respOrm.err.messsage, statusCode = enum_.CODE_BAD_REQUEST;
             }else{
-                return res.status(enum_.CODE_OK).send(await util.ResponseService('Success','','Datacenter updated',''));
+                message = 'User deleted', statusCode = enum_.CODE_OK;
             }
         }else{
-            return res.status(enum_.CODE_BAD_REQUEST).send(await util.ResponseService('Failure',enum_.FAIL_CONVERTED_UUID_TO_STRING,'Error trying convert uuid to string',''));
+            status = 'Failure', errorCode = enum_.FAIL_CONVERTED_UUID_TO_STRING, message = 'Error trying convert uuid to string', statusCode = enum_.CODE_BAD_REQUEST;
         }
+        resp = await magic.ResponseService(status,errorCode,message,data)
+        return res.status(statusCode).send(resp);
     } catch(err) {
         console.log("err = ", err);
-        return res.status(enum_.CODE_INTERNAL_SERVER_ERROR).send(await util.ResponseService('Failure',enum_.CRASH_LOGIC,err,''));
+        return res.status(enum_.CODE_INTERNAL_SERVER_ERROR).send(await magic.ResponseService('Failure',enum_.CRASH_LOGIC,err,''));
     }
 }

@@ -1,5 +1,4 @@
 port: 8080
-versionApi: v1
 db:
     mongodb:
         -   enabled: true
